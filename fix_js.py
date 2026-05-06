@@ -1,0 +1,20 @@
+with open('app.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# Find and fix the broken block - the submitPayment closure was never closed
+# and the old submitNewTournament was merged into it
+old = """        if(res.ok) {\r\n            alert("Payment recorded successfully!");\r\n            document.getElementById('record-payment-modal').classList.remove('active');\r\n            loadStudents();\r\n            loadFees();\r\n    \r\n    try {\r\n        const res = await fetch('/api/tournaments', {\r\n            method: 'POST',\r\n            headers: {'Content-Type': 'application/json'},\r\n            body: JSON.stringify({ name, date })\r\n        });\r\n        if(res.ok) {\r\n            alert("Tournament created!");\r\n            document.getElementById('add-tournament-modal').classList.remove('active');\r\n            loadTournaments();\r\n        }\r\n    } catch(err) {\r\n        alert("Error creating tournament.");\r\n    }\r\n}"""
+
+new = """        if(res.ok) {\r\n            alert("Payment recorded successfully!");\r\n            document.getElementById('record-payment-modal').classList.remove('active');\r\n            loadStudents();\r\n            loadFees();\r\n        }\r\n    } catch(err) {\r\n        alert("Error recording payment.");\r\n    }\r\n}\r\n\r\n// Tournament System\r\nasync function loadTournaments() {\r\n    const tbody = document.querySelector('#tournaments-table tbody');\r\n    try {\r\n        const res = await fetch('/api/tournaments');\r\n        const ts = await res.json();\r\n        if(ts.length === 0) {\r\n            tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);">No tournaments yet. Create your first one!</td></tr>';\r\n            return;\r\n        }\r\n        tbody.innerHTML = ts.map(t => `\r\n            <tr>\r\n                <td>${t.date}</td>\r\n                <td><strong>${t.name}</strong></td>\r\n                <td>${t.participant_count || 0} Students</td>\r\n                <td style="text-align: right; display:flex; gap:8px; justify-content:flex-end;">\r\n                    <button class="action-btn btn-pay" onclick="openParticipationModal(${t.id})"><i class="fa-solid fa-user-plus"></i> Add Student</button>\r\n                    <button class="action-btn btn-delete" onclick="deleteTournament(${t.id}, '${t.name}')"><i class="fa-solid fa-trash"></i></button>\r\n                </td>\r\n            </tr>\r\n        `).join('');\r\n    } catch(err) {\r\n        tbody.innerHTML = '<tr><td colspan="4">Error loading tournaments.</td></tr>';\r\n    }\r\n}\r\n\r\nasync function deleteTournament(id, name) {\r\n    if(!confirm(`Delete "${name}" and all its participant records?`)) return;\r\n    try {\r\n        const res = await fetch(`/api/tournaments/${id}`, { method: 'DELETE' });\r\n        if(res.ok) { loadTournaments(); loadDashboard(); }\r\n        else alert('Failed to delete.');\r\n    } catch(err) { alert('Error deleting.'); }\r\n}\r\n\r\nasync function submitNewTournament() {\r\n    const name = document.getElementById('new-t-name').value;\r\n    const date = document.getElementById('new-t-date').value;\r\n    if(!name || !date) return alert("Please fill all fields!");\r\n    try {\r\n        const res = await fetch('/api/tournaments', {\r\n            method: 'POST',\r\n            headers: {'Content-Type': 'application/json'},\r\n            body: JSON.stringify({ name, date })\r\n        });\r\n        if(res.ok) {\r\n            alert("Tournament created!");\r\n            document.getElementById('add-tournament-modal').classList.remove('active');\r\n            loadTournaments();\r\n        }\r\n    } catch(err) {\r\n        alert("Error creating tournament.");\r\n    }\r\n}"""
+
+if old in content:
+    content = content.replace(old, new)
+    print("Fixed block found and replaced!")
+else:
+    print("Block not found — checking actual content around line 750...")
+    lines = content.split('\n')
+    for i, l in enumerate(lines[745:760], start=746):
+        print(f"{i}: {repr(l)}")
+
+with open('app.js', 'w', encoding='utf-8') as f:
+    f.write(content)
