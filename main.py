@@ -603,7 +603,7 @@ def export_fees(session: Session = Depends(get_db)):
                              headers={"Content-Disposition": "attachment; filename=fees.csv"})
 
 # --- Static Files & Routing ---
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+# app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 @app.get("/")
 def serve_frontend():
