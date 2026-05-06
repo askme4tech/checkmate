@@ -908,11 +908,15 @@ async function loadTournaments() {
 
         // Prepare Performance Chart Data
         const chartData = {};
-        // Reverse to show chronological order on chart
         ts.slice().reverse().forEach(t => {
             chartData[t.name] = t.avg_points;
         });
         renderTournamentPerformanceChart(chartData);
+
+        // Fetch Participation Trend for the second chart
+        const dashRes = await fetch('/api/analytics/dashboard');
+        const dashData = await dashRes.json();
+        renderTournamentActivityChart(dashData.tournament_activity || {});
     } catch(err) {
         tbody.innerHTML = '<tr><td colspan="4">Error loading tournaments.</td></tr>';
     }
