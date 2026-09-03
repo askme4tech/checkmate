@@ -9,3 +9,17 @@ ENV/
 *.db
 .vscode/
 .idea/
+
+# Scratch & test scripts
+scratch/
+*.py
+!main.py
+!database.py
+!main_exe.py
+!push_db.py
+
+# Backups & Data
+*.db.backup
+*.zip
+*.xlsx
+*.csv
