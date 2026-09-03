@@ -1282,10 +1282,6 @@ def export_fees(session: Session = Depends(get_db), current_user: db.Staff = Dep
 # --- Static Files & Routing ---
 # app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
-@app.get("/")
-def serve_frontend():
-    return {"message": "API is running. Please go to http://localhost:5173 for the React application."}
-
 @app.get("/logo.jpeg")
 def serve_logo():
     return FileResponse(resource_path("logo.jpeg"))
@@ -1513,3 +1509,18 @@ def get_finance_overview(session: Session = Depends(get_db), current_user: db.St
         "total_revenue": total_revenue,
         "recent_transactions": [{"id": f.id, "amount": f.amount, "date": f.date, "type": f.type} for f in fees[:10]]
     }
+
+# --- Serve React Frontend ---
+import os
+dist_path = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+if os.path.isdir(dist_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
+    
+    @app.get("/{full_path:path}")
+    def serve_react_app(full_path: str):
+        # Serve specific files in dist if requested (like favicon, etc.)
+        file_path = os.path.join(dist_path, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise fallback to index.html for React Router
+        return FileResponse(os.path.join(dist_path, "index.html"))
