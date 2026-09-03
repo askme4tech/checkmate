@@ -12,6 +12,11 @@ export const Attendance = () => {
   const [attendanceState, setAttendanceState] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
+  
+  // Flexible Timings / Walk-in State
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [allStudents, setAllStudents] = useState([]);
+  const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
     fetchBatches();
@@ -49,13 +54,34 @@ export const Attendance = () => {
       }
 
       setStudents(filteredData);
-      // Initialize all to Present by default
-      const initialState = {};
-      filteredData.forEach(s => initialState[s.id] = 'Present');
-      setAttendanceState(initialState);
-    } catch (e) {
-      alert("Error fetching students");
+      // Set defaults based on history or new
+      const newState = {};
+      filteredData.forEach(s => {
+        const h = history.find(record => record.student_id === s.id && record.date === date);
+        newState[s.id] = h ? h.status : 'Present';
+      });
+      setAttendanceState(newState);
+      setStudents(filteredData);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleFetchAllStudents = async () => {
+    try {
+      const data = await apiClient('/students');
+      setAllStudents(data.filter(s => s.status === 'Active'));
+      setShowAddStudentModal(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddFlexibleStudent = (student) => {
+    if (students.find(s => s.id === student.id)) {
+      alert("Student is already in today's attendance list!");
+      return;
     }
+    setStudents([...students, student]);
+    setAttendanceState({ ...attendanceState, [student.id]: 'Present' });
+    setShowAddStudentModal(false);
+    setStudentSearch('');
   };
 
   const handleSaveAttendance = async () => {
@@ -121,7 +147,14 @@ export const Attendance = () => {
             </div>
           )}
           
-          <button className="btn btn-primary" onClick={handleFetchStudents} style={{ padding: '10px 24px' }}>Fetch Students</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-primary" onClick={handleFetchStudents} style={{ padding: '10px 24px' }}>Fetch Students</button>
+            {students.length > 0 && (
+              <button className="btn btn-secondary" onClick={handleFetchAllStudents} style={{ padding: '10px 24px' }}>
+                + Add Flexible Student
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -223,6 +256,41 @@ export const Attendance = () => {
           </table>
         </div>
       </div>
+      {showAddStudentModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+          <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '8px', width: '400px', border: '1px solid var(--border-color)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Add Flexible Student</h3>
+              <button onClick={() => setShowAddStudentModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div className="search-bar" style={{ marginBottom: '16px' }}>
+              <Search size={18} className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search students..." 
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                style={{ width: '100%', paddingLeft: '36px', background: 'rgba(0,0,0,0.2)' }}
+              />
+            </div>
+            
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {allStudents
+                .filter(s => s.name.toLowerCase().includes(studentSearch.toLowerCase()))
+                .map(s => (
+                <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'white' }}>{s.name}</span>
+                  <button onClick={() => handleAddFlexibleStudent(s)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Add</button>
+                </div>
+              ))}
+              {allStudents.filter(s => s.name.toLowerCase().includes(studentSearch.toLowerCase())).length === 0 && (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
