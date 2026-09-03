@@ -1,6 +1,6 @@
 const IS_PROD = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 export const API_BASE_URL = IS_PROD 
-  ? 'https://api.checkmatecbe.com/api' // Adjust this depending on your cloud hosting setup
+  ? '/api' 
   : 'http://localhost:8100/api';
 
 export const apiClient = async (endpoint, options = {}) => {
