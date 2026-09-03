@@ -108,13 +108,8 @@ app = FastAPI(title="Checkmate Academy Management System")
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://localhost:8100", 
-        "https://checkmatecbe.com", 
-        "https://www.checkmatecbe.com"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

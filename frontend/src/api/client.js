@@ -1,6 +1,6 @@
 const IS_PROD = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 export const API_BASE_URL = IS_PROD 
-  ? '/api' 
+  ? 'https://checkmate-1zt6.onrender.com/api' 
   : 'http://localhost:8100/api';
 
 export const apiClient = async (endpoint, options = {}) => {
